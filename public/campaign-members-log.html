@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Campaign Members Log</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 1000px; margin: 40px auto; padding: 0 20px; color: #333; background: #f9fafb; }
+    h1 { font-size: 1.5rem; margin-bottom: 8px; }
+    .subtitle { color: #666; margin-bottom: 24px; font-size: 0.9rem; }
+    .run-card { background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px; margin-bottom: 16px; }
+    .run-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .run-time { color: #666; font-size: 0.85rem; }
+    .campaign-id { font-family: monospace; background: #f3f4f6; padding: 2px 8px; border-radius: 4px; font-size: 0.85rem; }
+    .stats { display: flex; gap: 24px; margin-bottom: 12px; }
+    .stat { text-align: center; }
+    .stat-value { font-size: 1.5rem; font-weight: 600; }
+    .stat-label { font-size: 0.75rem; color: #666; text-transform: uppercase; }
+    .stat-value.added { color: #16a34a; }
+    .stat-value.skipped { color: #dc2626; }
+    .skipped-list { margin-top: 12px; }
+    .skipped-toggle { cursor: pointer; color: #0066cc; font-size: 0.85rem; border: none; background: none; padding: 0; }
+    .skipped-emails { display: none; margin-top: 8px; font-family: monospace; font-size: 0.8rem; background: #f9fafb; padding: 12px; border-radius: 4px; max-height: 200px; overflow-y: auto; line-height: 1.6; }
+    .skipped-emails.open { display: block; }
+    .empty { text-align: center; padding: 60px 20px; color: #999; }
+    .loading { text-align: center; padding: 60px 20px; color: #666; }
+    .error-list { margin-top: 8px; font-size: 0.8rem; color: #dc2626; }
+    a { color: #0066cc; }
+  </style>
+</head>
+<body>
+  <h1>Campaign Members Log</h1>
+  <p class="subtitle">Results from each campaign member import run. <a href="/">&larr; Home</a></p>
+  <div id="content"><div class="loading">Loading runs...</div></div>
+
+  <script>
+    async function loadLogs() {
+      var el = document.getElementById('content');
+      try {
+        var resp = await fetch('/api/campaign-members-log');
+        var data = await resp.json();
+        if (!data.runs || data.runs.length === 0) {
+          el.innerHTML = '<div class="empty">No runs yet.</div>';
+          return;
+        }
+        var html = '';
+        for (var i = 0; i < data.runs.length; i++) {
+          var run = data.runs[i];
+          html += '<div class="run-card">';
+          html += '<div class="run-header"><span class="campaign-id">' + esc(run.campaign_id) + '</span><span class="run-time">' + formatDate(run.timestamp) + '</span></div>';
+          html += '<div class="stats">';
+          html += '<div class="stat"><div class="stat-value">' + run.total_emails + '</div><div class="stat-label">Total</div></div>';
+          html += '<div class="stat"><div class="stat-value added">' + run.added + '</div><div class="stat-label">Added</div></div>';
+          html += '<div class="stat"><div class="stat-value skipped">' + run.skipped + '</div><div class="stat-label">Skipped</div></div>';
+          if (run.insert_errors) { html += '<div class="stat"><div class="stat-value skipped">' + run.insert_errors + '</div><div class="stat-label">Errors</div></div>'; }
+          html += '</div>';
+          if (run.skipped_emails && run.skipped_emails.length > 0) {
+            html += '<div class="skipped-list"><button class="skipped-toggle" onclick="this.nextElementSibling.classList.toggle(\'open\')">Show ' + run.skipped_emails.length + ' skipped emails</button>';
+            html += '<div class="skipped-emails">' + run.skipped_emails.map(function(e) { return esc(e); }).join('<br>') + '</div></div>';
+          }
+          html += '</div>';
+        }
+        el.innerHTML = html;
+      } catch (err) {
+        el.innerHTML = '<div class="empty">Failed to load logs.</div>';
+      }
+    }
+    function esc(s) { var d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }
+    function formatDate(iso) { if (!iso) return ''; return new Date(iso).toLocaleString(); }
+    loadLogs();
+  </script>
+</body>
+</html>
