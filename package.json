@@ -1,8 +1,9 @@
 {
-  "name": "campaign-member-adder",
-  "version": "1.0.0",
-  "private": true,
-  "dependencies": {
-    "jsforce": "^1.11.1"
-  }
+    "name": "campaign-member-adder",
+    "version": "1.0.0",
+    "private": true,
+    "type": "module",
+    "dependencies": {
+          "jsforce": "^1.11.1"
+    }
 }
